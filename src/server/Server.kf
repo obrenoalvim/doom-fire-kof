@@ -1,0 +1,5 @@
+main() {
+    var app = web.app()
+    app.serveDir("/", "F:/GitHub/doom-fire-kof/src/web")
+    app.listen(8080)
+}

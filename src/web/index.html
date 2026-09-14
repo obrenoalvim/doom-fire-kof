@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kof Doom Fire</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --ground:#0b0d10; --panel:#111418; --border:#1d2126;
+    --text:#c7cdd6; --dim:#5b6470; --ember:#ff7b1c; --ok:#4cd97b;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--ground); color:var(--text);
+    font-family:"Inter",system-ui,sans-serif;
+    padding:20px 16px 40px; display:flex; flex-direction:column; gap:18px;
+    align-items:center;
+  }
+  .wrap{ width:100%; max-width:960px; display:flex; flex-direction:column; gap:16px; }
+  .topbar{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .eyebrow{
+    font-family:"JetBrains Mono",monospace; font-size:11px; letter-spacing:.12em;
+    text-transform:uppercase; color:var(--dim); display:flex; align-items:center; gap:8px;
+  }
+  .eyebrow .dot{ width:6px; height:6px; border-radius:50%; background:var(--ok); box-shadow:0 0 6px var(--ok); }
+  .langtoggle{ display:flex; border:1px solid var(--border); border-radius:6px; overflow:hidden; flex-shrink:0; }
+  .langtoggle button{
+    font-family:"JetBrains Mono",monospace; font-size:11px; letter-spacing:.06em; font-weight:500;
+    background:var(--panel); color:var(--dim); border:0; padding:6px 12px; cursor:pointer;
+  }
+  .langtoggle button + button{ border-left:1px solid var(--border); }
+  .langtoggle button[aria-pressed="true"]{ background:var(--ember); color:#1a0e04; }
+  h1{
+    font-family:"JetBrains Mono",monospace; font-weight:700; font-size:clamp(22px,4vw,32px);
+    margin:0; color:#fff; text-wrap:balance; letter-spacing:-0.01em;
+  }
+  p.lede{ margin:0; max-width:65ch; font-size:14.5px; line-height:1.6; color:var(--text); }
+  p.lede code{
+    font-family:"JetBrains Mono",monospace; background:var(--panel);
+    border:1px solid var(--border); border-radius:4px; padding:1px 5px; font-size:13px; color:var(--ember);
+  }
+  .terminal{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    overflow:hidden; box-shadow:0 20px 60px -20px rgba(0,0,0,.6);
+  }
+  .titlebar{ display:flex; align-items:center; gap:10px; padding:9px 14px; background:#0d0f12; border-bottom:1px solid var(--border); }
+  .titlebar .tdot{ width:10px; height:10px; border-radius:50%; }
+  .titlebar .tdot.r{background:#ff5f57} .titlebar .tdot.y{background:#febc2e} .titlebar .tdot.g{background:#28c840}
+  .titlebar .fname{ font-family:"JetBrains Mono",monospace; font-size:12px; color:var(--dim); margin-left:6px; }
+  .titlebar .fname b{ color:var(--text); font-weight:500; }
+  .titlebar .fps{ margin-left:auto; font-family:"JetBrains Mono",monospace; font-size:11px; color:var(--dim); font-variant-numeric:tabular-nums; }
+  canvas{ display:block; width:100%; height:auto; image-rendering:pixelated; background:#000; }
+  .controls{
+    display:flex; align-items:center; gap:12px; padding:12px 14px; border-top:1px solid var(--border); background:#0d0f12;
+  }
+  .controls .clabel{
+    font-family:"JetBrains Mono",monospace; font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--dim);
+    white-space:nowrap;
+  }
+  .controls .extreme{ font-family:"JetBrains Mono",monospace; font-size:11px; color:var(--dim); white-space:nowrap; }
+  .controls input[type=range]{
+    flex:1; accent-color:var(--ember); height:4px; min-width:80px;
+  }
+  @media (max-width:520px){ .controls{ flex-wrap:wrap; } .controls .clabel{ width:100%; } }
+  .grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  @media (max-width:560px){ .grid{ grid-template-columns:1fr; } }
+  .card{ background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:14px 16px; display:flex; flex-direction:column; gap:6px; }
+  .card .k{ font-family:"JetBrains Mono",monospace; font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--dim); }
+  .card .v{ font-size:13.5px; line-height:1.55; color:var(--text); }
+  .card .v b{ color:#fff; font-weight:600; }
+  .palette{ display:flex; gap:2px; height:10px; border-radius:3px; overflow:hidden; margin-top:4px; }
+  .palette span{ flex:1; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="eyebrow"><span class="dot"></span> <span data-i18n="eyebrow">KOF.WEB · KOF SERVE · LOCALHOST</span></div>
+    <div class="langtoggle" role="group" aria-label="Language / Idioma">
+      <button type="button" data-lang="en" aria-pressed="true">EN</button>
+      <button type="button" data-lang="pt" aria-pressed="false">PT</button>
+    </div>
+  </div>
+  <h1 data-i18n="h1">Doom Fire, ported to Kof</h1>
+  <p class="lede" data-i18n="lede">
+    Same algorithm as <code>filipedeschamps/doom-fire-algorithm</code>. Fire spawns at max intensity
+    along the bottom row; each pixel copies the one below it with random decay and a slight horizontal
+    drift, mapped through a 36-step palette. The terminal build runs on Kof itself, JVM target, in
+    <code>src/cli/Main.kf</code>. This page runs the same algorithm in JS, served straight off disk by
+    Kof's own web server in <code>src/server/Server.kf</code>.
+  </p>
+
+  <div class="terminal">
+    <div class="titlebar">
+      <span class="tdot r"></span><span class="tdot y"></span><span class="tdot g"></span>
+      <span class="fname"><b>doFire()</b></span>
+      <span class="fps" id="fps">-- fps</span>
+    </div>
+    <canvas id="fire" width="160" height="90"></canvas>
+    <div class="controls">
+      <span class="clabel" data-i18n="intensityLabel">FIRE INTENSITY</span>
+      <span class="extreme" data-i18n="intensityMin">Ember</span>
+      <input type="range" id="intensity" min="0" max="3" step="1" value="1" aria-label="Fire intensity">
+      <span class="extreme" data-i18n="intensityMax">Inferno</span>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="k" data-i18n="card1Title">Algorithm</div>
+      <div class="v" data-i18n="card1Body">Column-by-column fire propagation. <b>O(width × height)</b> per frame, 36-step palette lookup, zero allocation in the hot loop.</div>
+    </div>
+    <div class="card">
+      <div class="k" data-i18n="card2Title">Kof source</div>
+      <div class="v" data-i18n="card2Body"><b>initFire</b> · <b>spreadFire</b> · <b>doFire</b> · <b>render</b>. Four top-level functions, flat <code style="font-family:'JetBrains Mono',monospace;color:var(--ember)">Int[]</code> buffer, no classes needed.</div>
+    </div>
+    <div class="card">
+      <div class="k" data-i18n="card3Title">Palette (index 0 → 35)</div>
+      <div class="v"><span data-i18n="card3Body">Black-body ramp: ember, orange, amber, pale flame, white.</span>
+        <div class="palette" id="paletteStrip"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="k" data-i18n="card4Title">Terminal target</div>
+      <div class="v" data-i18n="card4Body">24-bit ANSI background per cell, <code>time.sleep(40)</code> between frames, <code>while (true)</code> looping in a background shell right now.</div>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  var STRINGS = {
+    en: {
+      eyebrow: "KOF.WEB · KOF SERVE · LOCALHOST",
+      h1: "Doom Fire, ported to Kof",
+      lede: 'Same algorithm as <code>filipedeschamps/doom-fire-algorithm</code>. Fire spawns at max intensity along the bottom row; each pixel copies the one below it with random decay and a slight horizontal drift, mapped through a 36-step palette. The terminal build runs on Kof itself, JVM target, in <code>src/cli/Main.kf</code>. This page runs the same algorithm in JS, served straight off disk by Kof\'s own web server in <code>src/server/Server.kf</code>.',
+      intensityLabel: "Fire intensity",
+      intensityMin: "Ember",
+      intensityMax: "Inferno",
+      card1Title: "Algorithm",
+      card1Body: "Column-by-column fire propagation. <b>O(width × height)</b> per frame, 36-step palette lookup, zero allocation in the hot loop.",
+      card2Title: "Kof source",
+      card2Body: '<b>initFire</b> · <b>spreadFire</b> · <b>doFire</b> · <b>render</b>. Four top-level functions, flat <code style="font-family:\'JetBrains Mono\',monospace;color:var(--ember)">Int[]</code> buffer, no classes needed.',
+      card3Title: "Palette (index 0 → 35)",
+      card3Body: "Black-body ramp: ember, orange, amber, pale flame, white.",
+      card4Title: "Terminal target",
+      card4Body: "24-bit ANSI background per cell, <code>time.sleep(40)</code> between frames, <code>while (true)</code> looping in a background shell right now."
+    },
+    pt: {
+      eyebrow: "KOF.WEB · KOF SERVE · LOCALHOST",
+      h1: "Doom Fire, portado para Kof",
+      lede: 'Mesmo algoritmo do <code>filipedeschamps/doom-fire-algorithm</code>. O fogo nasce com intensidade máxima na linha de baixo; cada pixel copia o de baixo com decaimento aleatório e leve deriva horizontal, mapeado numa paleta de 36 passos. A versão de terminal roda em Kof puro, target JVM, em <code>src/cli/Main.kf</code>. Esta página roda o mesmo algoritmo em JS, servido direto do disco pelo próprio servidor web do Kof em <code>src/server/Server.kf</code>.',
+      intensityLabel: "Intensidade do fogo",
+      intensityMin: "Brasa",
+      intensityMax: "Inferno",
+      card1Title: "Algoritmo",
+      card1Body: "Propagação de fogo coluna por coluna. <b>O(width × height)</b> por frame, busca na paleta de 36 passos, zero alocação no loop quente.",
+      card2Title: "Fonte em Kof",
+      card2Body: '<b>initFire</b> · <b>spreadFire</b> · <b>doFire</b> · <b>render</b>. Quatro funções top-level, buffer <code style="font-family:\'JetBrains Mono\',monospace;color:var(--ember)">Int[]</code> plano, sem precisar de classes.',
+      card3Title: "Paleta (índice 0 → 35)",
+      card3Body: "Rampa de corpo negro: brasa, laranja, âmbar, chama pálida, branco.",
+      card4Title: "Alvo terminal",
+      card4Body: "Fundo ANSI 24 bits por célula, <code>time.sleep(40)</code> entre frames, loop <code>while (true)</code> rodando agora em background."
+    }
+  };
+
+  function applyLang(lang){
+    var dict = STRINGS[lang];
+    document.querySelectorAll('[data-i18n]').forEach(function(el){
+      var key = el.getAttribute('data-i18n');
+      if (dict[key] !== undefined) el.innerHTML = dict[key];
+    });
+    document.documentElement.lang = lang;
+    document.querySelectorAll('.langtoggle button').forEach(function(btn){
+      btn.setAttribute('aria-pressed', btn.getAttribute('data-lang') === lang ? 'true' : 'false');
+    });
+    try { localStorage.setItem('kof-fire-lang', lang); } catch(e){}
+  }
+
+  document.querySelectorAll('.langtoggle button').forEach(function(btn){
+    btn.addEventListener('click', function(){ applyLang(btn.getAttribute('data-lang')); });
+  });
+
+  var savedLang = null;
+  try { savedLang = localStorage.getItem('kof-fire-lang'); } catch(e){}
+  if (!savedLang) savedLang = (navigator.language || '').toLowerCase().indexOf('pt') === 0 ? 'pt' : 'en';
+  applyLang(savedLang === 'pt' ? 'pt' : 'en');
+
+  var W = 160, H = 90, MAX = 35;
+  var palette = [
+    [7,7,7],[31,7,7],[47,15,7],[71,15,7],[87,23,7],[103,31,7],[119,31,7],[143,39,7],
+    [159,47,7],[175,63,7],[191,71,7],[199,71,7],[223,79,7],[223,87,7],[223,87,7],[215,95,7],
+    [215,103,15],[207,111,15],[207,119,15],[207,127,15],[207,135,23],[199,135,23],[199,143,23],[199,151,31],
+    [191,159,31],[191,159,31],[191,167,39],[191,167,39],[191,175,47],[183,175,47],[183,183,47],[183,183,55],
+    [207,207,111],[223,223,159],[239,239,199],[255,255,255]
+  ];
+  var stripHtml = "";
+  for (var p = 0; p < palette.length; p++){
+    stripHtml += '<span style="background:rgb(' + palette[p][0] + ',' + palette[p][1] + ',' + palette[p][2] + ')"></span>';
+  }
+  document.getElementById('paletteStrip').innerHTML = stripHtml;
+
+  var decayStrength = 1;
+  var intensitySlider = document.getElementById('intensity');
+  try { decayStrength = 3 - parseInt(localStorage.getItem('kof-fire-decay') || '2', 10); } catch(e){}
+  if (isNaN(decayStrength) || decayStrength < 0 || decayStrength > 3) decayStrength = 1;
+  intensitySlider.value = 3 - decayStrength;
+  intensitySlider.addEventListener('input', function(){
+    decayStrength = 3 - parseInt(intensitySlider.value, 10);
+    try { localStorage.setItem('kof-fire-decay', intensitySlider.value); } catch(e){}
+  });
+
+  var fire = new Int32Array(W * H);
+  function initFire(){
+    for (var x = 0; x < W; x++) fire[(H - 1) * W + x] = MAX;
+  }
+  function spreadFire(src){
+    var x = src % W;
+    var y = (src / W) | 0;
+    var pixel = fire[src];
+    if (pixel === 0){
+      fire[(y - 1) * W + x] = 0;
+    } else {
+      var rand = (Math.random() * 4) | 0;
+      var dstX = x - rand + 1;
+      if (dstX < 0) dstX = 0;
+      if (dstX >= W) dstX = W - 1;
+      var next = pixel - (rand & 1) * decayStrength;
+      if (next < 0) next = 0;
+      fire[(y - 1) * W + dstX] = next;
+    }
+  }
+  function doFire(){
+    for (var x = 0; x < W; x++){
+      for (var y = 1; y < H; y++){
+        spreadFire(y * W + x);
+      }
+    }
+  }
+  var canvas = document.getElementById('fire');
+  canvas.width = W; canvas.height = H;
+  var ctx = canvas.getContext('2d');
+  var img = ctx.createImageData(W, H);
+  function render(){
+    var d = img.data;
+    for (var i = 0; i < W * H; i++){
+      var c = palette[fire[i]];
+      var o = i * 4;
+      d[o] = c[0]; d[o+1] = c[1]; d[o+2] = c[2]; d[o+3] = 255;
+    }
+    ctx.putImageData(img, 0, 0);
+  }
+  initFire();
+  var last = performance.now(), frames = 0, fpsEl = document.getElementById('fps');
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function loop(now){
+    doFire();
+    render();
+    frames++;
+    if (now - last >= 1000){
+      fpsEl.textContent = frames + ' fps';
+      frames = 0; last = now;
+    }
+    if (!reduce) requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+  if (reduce){ setInterval(function(){ doFire(); render(); }, 250); }
+})();
+</script>
+</body>
+</html>
